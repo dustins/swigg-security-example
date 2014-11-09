@@ -42,8 +42,8 @@ public class DomainPermissionEntity extends WildcardPermission implements Permis
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "securityIdentity")
-    private String securityIdentity;
+    @Column(name = "principalIdentity")
+    private String principalIdentity;
 
     @Column(name = "domain")
     private String domain;
@@ -59,11 +59,6 @@ public class DomainPermissionEntity extends WildcardPermission implements Permis
     private Set<String> targets;
 
     public static TargetIdentity ANY_TARGET = new TargetIdentity() {
-        @Override
-        public String getTargetIdentityBase() {
-            return "";
-        }
-
         @Override
         public String getTargetIdentity() {
             return "*";
@@ -98,13 +93,13 @@ public class DomainPermissionEntity extends WildcardPermission implements Permis
         this(domain, actions, target.getTargetIdentity());
     }
 
-    public DomainPermissionEntity(SecurityIdentity securityIdentity, String domain, String actions, String targets) {
+    public DomainPermissionEntity(PrincipalIdentity principalIdentity, String domain, String actions, String targets) {
         this(domain, actions, targets);
-        this.securityIdentity = securityIdentity.getSecurityIdentity();
+        this.principalIdentity = principalIdentity.getPrincipalIdentity();
     }
 
-    public DomainPermissionEntity(SecurityIdentity securityIdentity, String domain, String actions, TargetIdentity target) {
-        this(securityIdentity, domain, actions, target.getTargetIdentity());
+    public DomainPermissionEntity(PrincipalIdentity principalIdentity, String domain, String actions, TargetIdentity target) {
+        this(principalIdentity, domain, actions, target.getTargetIdentity());
     }
 
     private void encodeParts(String domain, String actions, String targets) {
@@ -145,12 +140,12 @@ public class DomainPermissionEntity extends WildcardPermission implements Permis
         this.id = id;
     }
 
-    public String getSecurityIdentity() {
-        return securityIdentity;
+    public String getPrincipalIdentity() {
+        return principalIdentity;
     }
 
-    public void setSecurityIdentity(String securityIdentity) {
-        this.securityIdentity = securityIdentity;
+    public void setPrincipalIdentity(String principalIdentity) {
+        this.principalIdentity = principalIdentity;
     }
 
     public String getDomain() {

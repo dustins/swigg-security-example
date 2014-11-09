@@ -18,7 +18,7 @@
 package net.swigg.security.example;
 
 import com.google.common.collect.Sets;
-import net.swigg.security.authorization.SecurityIdentity;
+import net.swigg.security.authorization.PrincipalIdentity;
 import net.swigg.security.authorization.TargetIdentity;
 
 import java.util.Set;
@@ -26,17 +26,24 @@ import java.util.Set;
 /**
  * @author Dustin Sweigart <dustin@swigg.net>
  */
-public class Account implements SecurityIdentity, TargetIdentity {
+public class Account implements PrincipalIdentity, TargetIdentity {
+    private Integer id;
+
     private String name;
 
-    private char[] password;
+    private String password;
 
     private Set<Role> roles;
 
-    public Account(String name, char[] password, Role... roles) {
+    public Account(Integer id, String name, String password, Role... roles) {
+        this.id = id;
         this.name = name;
         this.password = password;
         this.roles = Sets.newHashSet(roles);
+    }
+
+    public Integer getId() {
+        return id;
     }
 
     public String getName() {
@@ -47,11 +54,11 @@ public class Account implements SecurityIdentity, TargetIdentity {
         this.name = name;
     }
 
-    public char[] getPassword() {
+    public String getPassword() {
         return password;
     }
 
-    public void setPassword(char[] password) {
+    public void setPassword(String password) {
         this.password = password;
     }
 
@@ -64,22 +71,12 @@ public class Account implements SecurityIdentity, TargetIdentity {
     }
 
     @Override
-    public String getSecurityIdentityBase() {
-        return "account:";
-    }
-
-    @Override
-    public String getSecurityIdentity() {
-        return getSecurityIdentityBase() + getName();
-    }
-
-    @Override
-    public String getTargetIdentityBase() {
-        return "account-";
+    public String getPrincipalIdentity() {
+        return "account:" + getId();
     }
 
     @Override
     public String getTargetIdentity() {
-        return getTargetIdentityBase() + getName();
+        return "account-" + getId();
     }
 }

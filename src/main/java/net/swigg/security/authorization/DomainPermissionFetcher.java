@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * JPA based implementation of {@link PermissionFetcher} that uses QueryDSL
+ *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
 public class DomainPermissionFetcher implements PermissionFetcher {
@@ -41,7 +43,7 @@ public class DomainPermissionFetcher implements PermissionFetcher {
     }
 
     @Transactional(readOnly = true)
-    public Set<? extends Permission> fetchPermissions(Collection<String> securityIdentities, Permission... permissions) {
+    public Set<? extends Permission> fetchPermissions(Collection<PrincipalIdentity> identities, Permission... permissions) {
         QDomainPermissionEntity wcPerm = new QDomainPermissionEntity("permission");
 
         // create the query
@@ -49,9 +51,9 @@ public class DomainPermissionFetcher implements PermissionFetcher {
         query.from(wcPerm);
 
         BooleanExpression whereExpression = null;
-        // build predicate for each securityIdentity case
-        for (String securityIdentity : securityIdentities) {
-            BooleanExpression sidExpression = wcPerm.securityIdentity.eq(securityIdentity);
+        // build predicate for each principalIdentity case
+        for (PrincipalIdentity identity : identities) {
+            BooleanExpression pidExpression = wcPerm.principalIdentity.eq(identity.getPrincipalIdentity());
 
             BooleanExpression permScopeExpr = null;
             for (Permission permission : permissions) {
@@ -77,8 +79,8 @@ public class DomainPermissionFetcher implements PermissionFetcher {
                 }
             }
 
-            sidExpression = sidExpression.and(permScopeExpr);
-            whereExpression = (whereExpression == null) ? sidExpression : whereExpression.or(sidExpression);
+            pidExpression = pidExpression.and(permScopeExpr);
+            whereExpression = (whereExpression == null) ? pidExpression : whereExpression.or(pidExpression);
         }
 
         List<? extends Permission> queryPermissions = query.where(whereExpression).list(wcPerm);

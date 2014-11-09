@@ -21,14 +21,26 @@ import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authc.credential.CredentialsMatcher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
+ * Implementation of {@link org.apache.shiro.authc.credential.CredentialsMatcher} that uses BCrypt hashing.
+ *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
 public class BCryptCredentialsMatcher implements CredentialsMatcher {
     private BCryptPasswordEncoder passwordEncoder;
+
+    /**
+     * no-argument constructor
+     */
+    protected BCryptCredentialsMatcher() {
+        this(new BCryptPasswordEncoder());
+    }
+
+    public BCryptCredentialsMatcher(BCryptPasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public boolean doCredentialsMatch(AuthenticationToken token, AuthenticationInfo info) {
@@ -38,10 +50,5 @@ public class BCryptCredentialsMatcher implements CredentialsMatcher {
 
     public BCryptPasswordEncoder getPasswordEncoder() {
         return passwordEncoder;
-    }
-
-    @Autowired
-    public void setPasswordEncoder(BCryptPasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
     }
 }

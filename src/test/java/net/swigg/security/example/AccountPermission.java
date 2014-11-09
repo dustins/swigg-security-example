@@ -18,10 +18,12 @@
 package net.swigg.security.example;
 
 import net.swigg.security.authorization.DomainPermissionEntity;
-import net.swigg.security.authorization.SecurityIdentity;
+import net.swigg.security.authorization.PrincipalIdentity;
 import net.swigg.security.authorization.TargetIdentity;
 
 /**
+ * Implementation of {@link org.apache.shiro.authz.Permission} specifically for {@link Account}s.
+ *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
 public class AccountPermission extends DomainPermissionEntity {
@@ -43,12 +45,12 @@ public class AccountPermission extends DomainPermissionEntity {
         super(PERMISSION_DOMAIN, actions, target.getTargetIdentity());
     }
 
-    public AccountPermission(SecurityIdentity securityIdentity, String actions, String targets) {
-        super(securityIdentity, PERMISSION_DOMAIN, actions, targets);
+    public AccountPermission(PrincipalIdentity principalIdentity, String actions, String targets) {
+        super(principalIdentity, PERMISSION_DOMAIN, actions, targets);
     }
 
-    public AccountPermission(SecurityIdentity securityIdentity, String actions, TargetIdentity target) {
-        super(securityIdentity, PERMISSION_DOMAIN, actions, target.getTargetIdentity());
+    public AccountPermission(PrincipalIdentity principalIdentity, String actions, TargetIdentity target) {
+        super(principalIdentity, PERMISSION_DOMAIN, actions, target.getTargetIdentity());
     }
 
     public static AccountPermission create() {

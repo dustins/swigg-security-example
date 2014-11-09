@@ -18,10 +18,17 @@
 package net.swigg.security.authorization;
 
 /**
+ * Interface that classes can implementing to identify themselves as a Principal.
+ *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
-public interface SecurityIdentity {
-    String getSecurityIdentityBase();
-
-    String getSecurityIdentity();
+public interface PrincipalIdentity {
+    /**
+     * A unique identity of this Principal. Identities should not be built using user configurable attributes for
+     * security reasons. A principal identity for a user in a blog application might return "user-4" which is built by
+     * pre-pending a meaningful type with a database assigned numeric id.
+     *
+     * @return
+     */
+    String getPrincipalIdentity();
 }

@@ -22,7 +22,7 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 
 /**
- * Dummy account repository
+ * Repository for {@link Account}s that uses a hash map for storage.
  *
  * @author Dustin Sweigart <dustin@swigg.net>
  */

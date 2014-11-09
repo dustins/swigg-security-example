@@ -17,38 +17,45 @@
 
 package net.swigg.security.example;
 
+import net.swigg.security.authentication.AuthenticationConfig;
+import net.swigg.security.authentication.BCryptCredentialsMatcher;
+import net.swigg.security.authorization.AuthorizationConfig;
 import net.swigg.security.authorization.DomainPermissionEntity;
+import net.swigg.security.authorization.PermissionFetcher;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.mgt.DefaultSecurityManager;
+import org.apache.shiro.realm.Realm;
 import org.apache.shiro.subject.Subject;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.Collection;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Class Description
- *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
-@ContextConfiguration(classes = {SecurityTestConfig.class})
+@ContextConfiguration(classes = {SecurityTest.Config.class})
 @RunWith(SpringJUnit4ClassRunner.class)
 public class SecurityTest {
     @Autowired
     AccountRepository accountRepository;
-
-    @Autowired
-    PasswordEncoder passwordEncoder;
 
     @PersistenceContext
     EntityManager entityManager;
@@ -58,31 +65,35 @@ public class SecurityTest {
         accountRepository.clear();
     }
 
+
+
     @Test
     @Transactional
     public void testPermissions() throws Exception {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         Role adminRole = new Role("admin");
         Role memberRole = new Role("member");
+        Role guestRole = new Role("guest");
 
         // add basic accounts
-        Account kermit = new Account("kermit", passwordEncoder.encode("kermit1").toCharArray(), adminRole, memberRole);
-        Account fozzy = new Account("fozzy", passwordEncoder.encode("fozzy1").toCharArray(), memberRole);
+        Account kermit = new Account(1, "kermit", passwordEncoder.encode("kermit1"), adminRole, memberRole);
+        Account fozzy = new Account(2, "fozzy", passwordEncoder.encode("fozzy1"), memberRole);
         accountRepository.addAccount(kermit, fozzy);
 
         // setup test permissions
-        entityManager.persist(new DomainPermissionEntity(adminRole, "*", "*", "*"));
-        entityManager.persist(new DomainPermissionEntity(memberRole, "account", "read", "*"));
-        entityManager.persist(new DomainPermissionEntity(memberRole, "account", "create", ""));
-        entityManager.persist(new DomainPermissionEntity(fozzy, "account", "delete", fozzy));
+        entityManager.persist(new DomainPermissionEntity(adminRole, "*", "*", "*"));            // admin role can do anything
+        entityManager.persist(new DomainPermissionEntity(memberRole, "account", "read", "*"));  // members can read any account
+        entityManager.persist(new DomainPermissionEntity(guestRole, "account", "create", ""));  // guests can create an account
+        entityManager.persist(new DomainPermissionEntity(fozzy, "account", "delete", fozzy));   // fozzy can delete his own account
 
         // login as kermit
         SecurityUtils.getSubject().login(new UsernamePasswordToken("kermit", "kermit1"));
         Subject subject = SecurityUtils.getSubject();
 
         // what roles does kermit have?
-        assertTrue(subject.hasRole("admin"));
-        assertTrue(subject.hasRole("member"));
-        assertFalse(subject.hasRole("god"));
+        assertTrue(subject.hasRole("role:admin"));
+        assertTrue(subject.hasRole("role:member"));
+        assertFalse(subject.hasRole("role:guest"));
 
         // can kermit generally do anything?
         assertTrue(subject.isPermitted(AccountPermission.create()));
@@ -107,12 +118,12 @@ public class SecurityTest {
         subject = SecurityUtils.getSubject();
 
         // what roles does fozzy have?
-        assertFalse(subject.hasRole("admin"));
-        assertTrue(subject.hasRole("member"));
-        assertFalse(subject.hasRole("god"));
+        assertFalse(subject.hasRole("role:admin"));
+        assertTrue(subject.hasRole("role:member"));
+        assertFalse(subject.hasRole("role:guest"));
 
         // can fozzy generally do anything?
-        assertTrue(subject.isPermitted(AccountPermission.create()));                                    // member implies "account:create"
+        assertFalse(subject.isPermitted(AccountPermission.create()));                                   // no permission implies "account:create"
         assertFalse(subject.isPermitted(AccountPermission.create(DomainPermissionEntity.ANY_TARGET)));  // no permission implies: "account:create:*"
         assertTrue(subject.isPermitted(AccountPermission.read()));                                      // member implies "account:read:*"
         assertTrue(subject.isPermitted(AccountPermission.read(DomainPermissionEntity.ANY_TARGET)));     // member implies "account:read:*"
@@ -120,13 +131,36 @@ public class SecurityTest {
         assertFalse(subject.isPermitted(AccountPermission.delete(DomainPermissionEntity.ANY_TARGET)));  // no permission implies "account:delete:*"
 
         // can fozzy do stuff to his own account?
-        assertFalse(subject.isPermitted(AccountPermission.create(fozzy)));  // this is meaningless, but technically no permissions implies "account:create:account-fozzy"
+        assertFalse(subject.isPermitted(AccountPermission.create(fozzy)));  // this is meaningless, but technically no permissions implies "account:create:account-2"
         assertTrue(subject.isPermitted(AccountPermission.read(fozzy)));     // member implies "account:read:*"
-        assertTrue(subject.isPermitted(AccountPermission.delete(fozzy)));   // as fozzy: "account:delete:account-fozzy"
+        assertTrue(subject.isPermitted(AccountPermission.delete(fozzy)));   // as fozzy: "account:delete:account-2"
 
         // can fozzy do stuff to kermit's account?
-        assertFalse(subject.isPermitted(AccountPermission.create(kermit))); // no permission implies "account:create:account-kermit"
+        assertFalse(subject.isPermitted(AccountPermission.create(kermit))); // no permission implies "account:create:account-1"
         assertTrue(subject.isPermitted(AccountPermission.read(kermit)));    // member implies "account:read:*"
-        assertFalse(subject.isPermitted(AccountPermission.delete(kermit))); // no permission implies "account:delete:account-kermit"
+        assertFalse(subject.isPermitted(AccountPermission.delete(kermit))); // no permission implies "account:delete:account-1"
+    }
+
+    @Configuration
+    @EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class})
+    @Import({AuthorizationConfig.class, AuthenticationConfig.class})
+    public static class Config {
+        @Bean
+        public ExampleRealm securityTestAuthorizingRealm(BCryptCredentialsMatcher credentialsMatcher, PermissionFetcher permissionFetcher, AccountRepository accountRepository) {
+            return new ExampleRealm(credentialsMatcher, permissionFetcher, accountRepository);
+        }
+
+        @Bean
+        public org.apache.shiro.mgt.SecurityManager securityManager(Collection<Realm> realms) {
+            org.apache.shiro.mgt.SecurityManager securityManager = new DefaultSecurityManager(realms);
+            SecurityUtils.setSecurityManager(securityManager);
+
+            return securityManager;
+        }
+
+        @Bean
+        public AccountRepository accountRepository() {
+            return new AccountRepository();
+        }
     }
 }

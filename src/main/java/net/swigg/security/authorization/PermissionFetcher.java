@@ -26,5 +26,12 @@ import java.util.Set;
  * @author Dustin Sweigart <dustin@swigg.net>
  */
 public interface PermissionFetcher {
-    Set<? extends Permission> fetchPermissions(Collection<String> securityIdentities, Permission... permissions);
+    /**
+     * Returns {@link Permission}s that are owned by one of the {@link PrincipalIdentity}s.
+     *
+     * @param identities
+     * @param permissions
+     * @return
+     */
+    Set<? extends Permission> fetchPermissions(Collection<PrincipalIdentity> identities, Permission... permissions);
 }

@@ -17,12 +17,12 @@
 
 package net.swigg.security.example;
 
-import net.swigg.security.authorization.SecurityIdentity;
+import net.swigg.security.authorization.PrincipalIdentity;
 
 /**
  * @author Dustin Sweigart <dustin@swigg.net>
  */
-public class Role implements SecurityIdentity {
+public class Role implements PrincipalIdentity {
     private String name;
 
     public Role(String name) {
@@ -34,12 +34,7 @@ public class Role implements SecurityIdentity {
     }
 
     @Override
-    public String getSecurityIdentityBase() {
-        return "role:";
-    }
-
-    @Override
-    public String getSecurityIdentity() {
-        return getSecurityIdentityBase() + getName();
+    public String getPrincipalIdentity() {
+        return "role:" + getName();
     }
 }

@@ -18,10 +18,17 @@
 package net.swigg.security.authorization;
 
 /**
+ * Interface that classes can implement to identify themselves when being referenced as the target of a permission.
+ *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
 public interface TargetIdentity {
-    String getTargetIdentityBase();
-
+    /**
+     * The unique identity of this resource. Identities should not be built using user configurable attributes for
+     * security reasons. A target identity for a post in a blog application might return "post-4" which is built by
+     * pre-pending a meaningful type with a database assigned numeric id.
+     *
+     * @return
+     */
     String getTargetIdentity();
 }
