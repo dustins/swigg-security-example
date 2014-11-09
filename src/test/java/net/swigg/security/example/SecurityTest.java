@@ -65,8 +65,6 @@ public class SecurityTest {
         accountRepository.clear();
     }
 
-
-
     @Test
     @Transactional
     public void testPermissions() throws Exception {
