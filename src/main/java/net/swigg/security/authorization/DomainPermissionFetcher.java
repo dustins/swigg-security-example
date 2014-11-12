@@ -44,7 +44,7 @@ public class DomainPermissionFetcher implements PermissionFetcher {
 
     @Transactional(readOnly = true)
     public Set<? extends Permission> fetchPermissions(Collection<PrincipalIdentity> identities, Permission... permissions) {
-        QDomainPermissionEntity wcPerm = new QDomainPermissionEntity("permission");
+        QPrincipalWildcardPermission wcPerm = new QPrincipalWildcardPermission("permission");
 
         // create the query
         JPAQuery query = new JPAQuery(getEntityManager());
@@ -57,11 +57,11 @@ public class DomainPermissionFetcher implements PermissionFetcher {
 
             BooleanExpression permScopeExpr = null;
             for (Permission permission : permissions) {
-                if (DomainPermissionEntity.class.isInstance(permission)) {
-                    DomainPermissionEntity queryPermission = DomainPermissionEntity.class.cast(permission);
+                if (PrincipalWildcardPermission.class.isInstance(permission)) {
+                    PrincipalWildcardPermission queryPermission = PrincipalWildcardPermission.class.cast(permission);
                     String domain = queryPermission.getDomain();
-                    Set<String> actions = queryPermission.getActions();
-                    Set<String> targets = queryPermission.getTargets();
+                    Set<String> actions = Sets.newHashSet(queryPermission.getActions());
+                    Set<String> targets = Sets.newHashSet(queryPermission.getTargets());
 
                     BooleanExpression permExpression = wcPerm.domain.in(domain, "*");
 

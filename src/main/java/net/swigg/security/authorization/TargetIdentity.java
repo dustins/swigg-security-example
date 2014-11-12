@@ -31,4 +31,11 @@ public interface TargetIdentity {
      * @return
      */
     String getTargetIdentity();
+
+    public static TargetIdentity ANY = new TargetIdentity() {
+        @Override
+        public String getTargetIdentity() {
+            return "*";
+        }
+    };
 }

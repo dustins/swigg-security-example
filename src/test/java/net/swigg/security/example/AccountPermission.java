@@ -17,63 +17,44 @@
 
 package net.swigg.security.example;
 
-import net.swigg.security.authorization.DomainPermissionEntity;
-import net.swigg.security.authorization.PrincipalIdentity;
+import com.google.common.collect.Sets;
+import net.swigg.security.authorization.PrincipalWildcardPermission;
 import net.swigg.security.authorization.TargetIdentity;
+import net.swigg.security.authorization.WildcardPermission;
+import org.apache.shiro.authz.Permission;
+
+import java.util.Set;
 
 /**
  * Implementation of {@link org.apache.shiro.authz.Permission} specifically for {@link Account}s.
  *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
-public class AccountPermission extends DomainPermissionEntity {
+public class AccountPermission extends PrincipalWildcardPermission implements Permission {
     public static final String PERMISSION_DOMAIN = "account";
 
-    public AccountPermission() {
-        super(PERMISSION_DOMAIN, WILDCARD_TOKEN, WILDCARD_TOKEN);
+    private Set<String> actions;
+
+    public AccountPermission(TargetIdentity... identities) {
+        super(PERMISSION_DOMAIN, null, identities);
+        this.actions = Sets.newHashSet();
     }
 
-    public AccountPermission(String actions) {
-        super(PERMISSION_DOMAIN, actions);
+    public WildcardPermission create() {
+        this.actions.add("create");
+        this.setActions(this.actions);
+        return this;
     }
 
-    public AccountPermission(String actions, String targets) {
-        super(PERMISSION_DOMAIN, actions, targets);
+    public WildcardPermission read() {
+        this.actions.add("read");
+        this.setActions(this.actions);
+        return this;
     }
 
-    public AccountPermission(String actions, TargetIdentity target) {
-        super(PERMISSION_DOMAIN, actions, target.getTargetIdentity());
-    }
-
-    public AccountPermission(PrincipalIdentity principalIdentity, String actions, String targets) {
-        super(principalIdentity, PERMISSION_DOMAIN, actions, targets);
-    }
-
-    public AccountPermission(PrincipalIdentity principalIdentity, String actions, TargetIdentity target) {
-        super(principalIdentity, PERMISSION_DOMAIN, actions, target.getTargetIdentity());
-    }
-
-    public static AccountPermission create() {
-        return new AccountPermission("create");
-    }
-
-    public static AccountPermission create(TargetIdentity target) {
-        return new AccountPermission("create", target);
-    }
-
-    public static AccountPermission read() {
-        return new AccountPermission("read");
-    }
-
-    public static AccountPermission read(TargetIdentity target) {
-        return new AccountPermission("read", target);
-    }
-
-    public static AccountPermission delete() {
-        return new AccountPermission("delete");
-    }
-
-    public static AccountPermission delete(TargetIdentity target) {
-        return new AccountPermission("delete", target);
+    public WildcardPermission delete() {
+        this.actions.add("delete");
+        this.setActions(this.actions);
+        return this;
     }
 }

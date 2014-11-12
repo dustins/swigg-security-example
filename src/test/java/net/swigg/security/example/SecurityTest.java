@@ -17,10 +17,11 @@
 
 package net.swigg.security.example;
 
+import com.google.common.collect.Sets;
 import net.swigg.security.authentication.AuthenticationConfig;
 import net.swigg.security.authentication.BCryptCredentialsMatcher;
 import net.swigg.security.authorization.AuthorizationConfig;
-import net.swigg.security.authorization.DomainPermissionEntity;
+import net.swigg.security.authorization.PrincipalWildcardPermission;
 import net.swigg.security.authorization.PermissionFetcher;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -47,6 +48,7 @@ import java.util.Collection;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static net.swigg.security.authorization.TargetIdentity.ANY;
 
 /**
  * @author Dustin Sweigart <dustin@swigg.net>
@@ -79,64 +81,64 @@ public class SecurityTest {
         accountRepository.addAccount(kermit, fozzy);
 
         // setup test permissions
-        entityManager.persist(new DomainPermissionEntity(adminRole, "*", "*", "*"));            // admin role can do anything
-        entityManager.persist(new DomainPermissionEntity(memberRole, "account", "read", "*"));  // members can read any account
-        entityManager.persist(new DomainPermissionEntity(guestRole, "account", "create", ""));  // guests can create an account
-        entityManager.persist(new DomainPermissionEntity(fozzy, "account", "delete", fozzy));   // fozzy can delete his own account
+        entityManager.persist(new PrincipalWildcardPermission(adminRole, "*:*:*"));            // admin role can do anything
+        entityManager.persist(new PrincipalWildcardPermission(memberRole, "account:read:*"));  // members can read any account
+        entityManager.persist(new PrincipalWildcardPermission(guestRole, "account:create"));  // guests can create an account
+        entityManager.persist(new PrincipalWildcardPermission(fozzy, "account:delete").setTargets(fozzy));   // fozzy can delete his own account
 
         // login as kermit
         SecurityUtils.getSubject().login(new UsernamePasswordToken("kermit", "kermit1"));
         Subject subject = SecurityUtils.getSubject();
 
         // what roles does kermit have?
-        assertTrue(subject.hasRole("role:admin"));
-        assertTrue(subject.hasRole("role:member"));
-        assertFalse(subject.hasRole("role:guest"));
+        assertTrue(subject.hasRole(adminRole.getPrincipalIdentity()));
+        assertTrue(subject.hasRole(memberRole.getPrincipalIdentity()));
+        assertFalse(subject.hasRole(guestRole.getPrincipalIdentity()));
 
         // can kermit generally do anything?
-        assertTrue(subject.isPermitted(AccountPermission.create()));
-        assertTrue(subject.isPermitted(AccountPermission.create(DomainPermissionEntity.ANY_TARGET)));
-        assertTrue(subject.isPermitted(AccountPermission.read()));
-        assertTrue(subject.isPermitted(AccountPermission.read(DomainPermissionEntity.ANY_TARGET)));
-        assertTrue(subject.isPermitted(AccountPermission.delete()));
-        assertTrue(subject.isPermitted(AccountPermission.delete(DomainPermissionEntity.ANY_TARGET)));
+        assertTrue(subject.isPermitted(new AccountPermission().create()));
+        assertTrue(subject.isPermitted(new AccountPermission().read()));
+        assertTrue(subject.isPermitted(new AccountPermission().delete()));
+        assertTrue(subject.isPermitted(new AccountPermission(ANY).create()));
+        assertTrue(subject.isPermitted(new AccountPermission(ANY).read()));
+        assertTrue(subject.isPermitted(new AccountPermission(ANY).delete()));
 
         // can kermit do stuff to his own account?
-        assertTrue(subject.isPermitted(AccountPermission.create(kermit))); // this is meaningless, but kermit can do anything
-        assertTrue(subject.isPermitted(AccountPermission.read(kermit)));
-        assertTrue(subject.isPermitted(AccountPermission.delete(kermit)));
+        assertTrue(subject.isPermitted(new AccountPermission(kermit).create())); // this is meaningless, but kermit can do anything
+        assertTrue(subject.isPermitted(new AccountPermission(kermit).read()));
+        assertTrue(subject.isPermitted(new AccountPermission(kermit).delete()));
 
         // can kermit do stuff to fozzy's account?
-        assertTrue(subject.isPermitted(AccountPermission.create(fozzy))); // this is meaningless, but kermit can do anything
-        assertTrue(subject.isPermitted(AccountPermission.read(fozzy)));
-        assertTrue(subject.isPermitted(AccountPermission.delete(fozzy)));
+        assertTrue(subject.isPermitted(new AccountPermission(fozzy).create())); // this is meaningless, but kermit can do anything
+        assertTrue(subject.isPermitted(new AccountPermission(fozzy).read()));
+        assertTrue(subject.isPermitted(new AccountPermission(fozzy).delete()));
 
         // login as fozzy
         SecurityUtils.getSubject().login(new UsernamePasswordToken("fozzy", "fozzy1"));
         subject = SecurityUtils.getSubject();
 
         // what roles does fozzy have?
-        assertFalse(subject.hasRole("role:admin"));
-        assertTrue(subject.hasRole("role:member"));
-        assertFalse(subject.hasRole("role:guest"));
+        assertFalse(subject.hasRole(adminRole.getPrincipalIdentity()));
+        assertTrue(subject.hasRole(memberRole.getPrincipalIdentity()));
+        assertFalse(subject.hasRole(guestRole.getPrincipalIdentity()));
 
         // can fozzy generally do anything?
-        assertFalse(subject.isPermitted(AccountPermission.create()));                                   // no permission implies "account:create"
-        assertFalse(subject.isPermitted(AccountPermission.create(DomainPermissionEntity.ANY_TARGET)));  // no permission implies: "account:create:*"
-        assertTrue(subject.isPermitted(AccountPermission.read()));                                      // member implies "account:read:*"
-        assertTrue(subject.isPermitted(AccountPermission.read(DomainPermissionEntity.ANY_TARGET)));     // member implies "account:read:*"
-        assertFalse(subject.isPermitted(AccountPermission.delete()));                                   // no permission implies "account:delete"
-        assertFalse(subject.isPermitted(AccountPermission.delete(DomainPermissionEntity.ANY_TARGET)));  // no permission implies "account:delete:*"
+        assertFalse(subject.isPermitted(new AccountPermission().create()));            // no permission implies "account:create"
+        assertTrue(subject.isPermitted(new AccountPermission().read()));               // member implies "account:read:*"
+        assertFalse(subject.isPermitted(new AccountPermission().delete()));            // no permission implies "account:delete"
+        assertFalse(subject.isPermitted(new AccountPermission(ANY).create()));  // no permission implies: "account:create:*"
+        assertTrue(subject.isPermitted(new AccountPermission(ANY).read()));     // member implies "account:read:*"
+        assertFalse(subject.isPermitted(new AccountPermission(ANY).delete()));  // no permission implies "account:delete:*"
 
         // can fozzy do stuff to his own account?
-        assertFalse(subject.isPermitted(AccountPermission.create(fozzy)));  // this is meaningless, but technically no permissions implies "account:create:account-2"
-        assertTrue(subject.isPermitted(AccountPermission.read(fozzy)));     // member implies "account:read:*"
-        assertTrue(subject.isPermitted(AccountPermission.delete(fozzy)));   // as fozzy: "account:delete:account-2"
+        assertFalse(subject.isPermitted(new AccountPermission(fozzy).create()));  // this is meaningless, but technically no permissions implies "account:create:account-2"
+        assertTrue(subject.isPermitted(new AccountPermission(fozzy).read()));     // member implies "account:read:*"
+        assertTrue(subject.isPermitted(new AccountPermission(fozzy).delete()));   // as fozzy: "account:delete:account-2"
 
         // can fozzy do stuff to kermit's account?
-        assertFalse(subject.isPermitted(AccountPermission.create(kermit))); // no permission implies "account:create:account-1"
-        assertTrue(subject.isPermitted(AccountPermission.read(kermit)));    // member implies "account:read:*"
-        assertFalse(subject.isPermitted(AccountPermission.delete(kermit))); // no permission implies "account:delete:account-1"
+        assertFalse(subject.isPermitted(new AccountPermission(kermit).create())); // no permission implies "account:create:account-1"
+        assertTrue(subject.isPermitted(new AccountPermission(kermit).read()));    // member implies "account:read:*"
+        assertFalse(subject.isPermitted(new AccountPermission(kermit).delete())); // no permission implies "account:delete:account-1"
     }
 
     @Configuration
