@@ -17,11 +17,10 @@
 
 package net.swigg.security.example;
 
-import com.google.common.collect.Sets;
 import net.swigg.security.authentication.AuthenticationConfig;
 import net.swigg.security.authentication.BCryptCredentialsMatcher;
 import net.swigg.security.authorization.AuthorizationConfig;
-import net.swigg.security.authorization.PrincipalWildcardPermission;
+import net.swigg.security.authorization.DATPermission;
 import net.swigg.security.authorization.PermissionFetcher;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -46,9 +45,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.Collection;
 
+import static net.swigg.security.authorization.TargetIdentity.ANY;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static net.swigg.security.authorization.TargetIdentity.ANY;
 
 /**
  * @author Dustin Sweigart <dustin@swigg.net>
@@ -81,10 +80,10 @@ public class SecurityTest {
         accountRepository.addAccount(kermit, fozzy);
 
         // setup test permissions
-        entityManager.persist(new PrincipalWildcardPermission(adminRole, "*:*:*"));            // admin role can do anything
-        entityManager.persist(new PrincipalWildcardPermission(memberRole, "account:read:*"));  // members can read any account
-        entityManager.persist(new PrincipalWildcardPermission(guestRole, "account:create"));  // guests can create an account
-        entityManager.persist(new PrincipalWildcardPermission(fozzy, "account:delete").setTargets(fozzy));   // fozzy can delete his own account
+        entityManager.persist(new DATPermission(adminRole, "*:*:*"));            // admin role can do anything
+        entityManager.persist(new DATPermission(memberRole, "account:read:*"));  // members can read any account
+        entityManager.persist(new DATPermission(guestRole, "account:create"));  // guests can create an account
+        entityManager.persist(new DATPermission(fozzy, "account:delete").setTargets(fozzy));   // fozzy can delete his own account
 
         // login as kermit
         SecurityUtils.getSubject().login(new UsernamePasswordToken("kermit", "kermit1"));

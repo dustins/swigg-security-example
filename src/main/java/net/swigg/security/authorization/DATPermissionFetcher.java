@@ -34,17 +34,17 @@ import java.util.Set;
  *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
-public class DomainPermissionFetcher implements PermissionFetcher {
+public class DATPermissionFetcher implements PermissionFetcher {
     @PersistenceContext
     private final EntityManager entityManager;
 
-    public DomainPermissionFetcher(final EntityManager entityManager) {
+    public DATPermissionFetcher(final EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 
     @Transactional(readOnly = true)
     public Set<? extends Permission> fetchPermissions(Collection<PrincipalIdentity> identities, Permission... permissions) {
-        QPrincipalWildcardPermission wcPerm = new QPrincipalWildcardPermission("permission");
+        QDATPermission wcPerm = new QDATPermission("permission");
 
         // create the query
         JPAQuery query = new JPAQuery(getEntityManager());
@@ -57,8 +57,8 @@ public class DomainPermissionFetcher implements PermissionFetcher {
 
             BooleanExpression permScopeExpr = null;
             for (Permission permission : permissions) {
-                if (PrincipalWildcardPermission.class.isInstance(permission)) {
-                    PrincipalWildcardPermission queryPermission = PrincipalWildcardPermission.class.cast(permission);
+                if (DATPermission.class.isInstance(permission)) {
+                    DATPermission queryPermission = DATPermission.class.cast(permission);
                     String domain = queryPermission.getDomain();
                     Set<String> actions = Sets.newHashSet(queryPermission.getActions());
                     Set<String> targets = Sets.newHashSet(queryPermission.getTargets());

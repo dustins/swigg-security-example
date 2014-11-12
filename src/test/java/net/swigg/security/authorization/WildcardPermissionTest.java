@@ -19,7 +19,8 @@ package net.swigg.security.authorization;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class WildcardPermissionTest {
     @Test
@@ -40,320 +41,271 @@ public class WildcardPermissionTest {
 
     @Test
     public void testImpliesAffirmativeSingleActions() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("action1");
-        p2.setActions("action1");
+        WildcardPermission p1 = new WildcardPermission("domain:action1");
+        WildcardPermission p2 = new WildcardPermission("domain:action1");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
 
-        p1.setActions("action2");
-        p2.setActions("action2");
+        p1 = new WildcardPermission("domain:action2");
+        p2 = new WildcardPermission("domain:action2");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
     }
 
     @Test
     public void testImpliesNegativeSingleActions() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("action1");
-        p2.setActions("action2");
+        WildcardPermission p1 = new WildcardPermission("domain:action1");
+        WildcardPermission p2 = new WildcardPermission("domain:action2");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("action2");
-        p2.setActions("action1");
+        p1 = new WildcardPermission("domain:action2");
+        p2 = new WildcardPermission("domain:action1");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
 
     @Test
     public void testImpliesAffirmativeMultiActions() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("action1", "action2");
-        p2.setActions("action1", "action2");
+        WildcardPermission p1 = new WildcardPermission("domain:action1,action2");
+        WildcardPermission p2 = new WildcardPermission("domain:action1,action2");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
 
-        p1.setActions("action2", "action1");
-        p2.setActions("action2", "action1");
+        p1 = new WildcardPermission("domain:action2,action1");
+        p2 = new WildcardPermission("domain:action2,action1");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
 
-        p1.setActions("action1", "action2");
-        p2.setActions("action2", "action1");
+        p1 = new WildcardPermission("domain:action1,action2");
+        p2 = new WildcardPermission("domain:action2,action1");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
 
-        p1.setActions("action2", "action1");
-        p2.setActions("action1", "action2");
+        p1 = new WildcardPermission("domain:action2,action1");
+        p2 = new WildcardPermission("domain:action1,action2");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
     }
 
     @Test
     public void testImpliesNegativeMultiActions() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("action1", "action2");
-        p2.setActions("action1", "action3");
+        WildcardPermission p1 = new WildcardPermission("domain:action1,action2");
+        WildcardPermission p2 = new WildcardPermission("domain:action1,action3");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("action1", "action2");
-        p2.setActions("action3", "action4");
+        p1 = new WildcardPermission("domain:action1,action2");
+        p2 = new WildcardPermission("domain:action3,action4");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("action4", "action1");
-        p2.setActions("action2", "action3");
+        p1 = new WildcardPermission("domain:action4,action1");
+        p2 = new WildcardPermission("domain:action2,action3");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("action3", "action4");
-        p2.setActions("action1", "action2");
+        p1 = new WildcardPermission("domain:action3,action4");
+        p2 = new WildcardPermission("domain:action1,action2");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("action2", "action3");
-        p2.setActions("action4", "action1");
+        p1 = new WildcardPermission("domain:action2,action3");
+        p2 = new WildcardPermission("domain:action4,action1");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
 
     @Test
     public void testImpliesAffirmativeSingleInstance() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setTargets("instance1");
-        p2.setTargets("instance1");
+        WildcardPermission p1 = new WildcardPermission("domain:*:instance1");
+        WildcardPermission p2 = new WildcardPermission("domain:*:instance1");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
 
-        p1.setTargets("instance2");
-        p2.setTargets("instance2");
+        p1 = new WildcardPermission("domain:*:instance2");
+        p2 = new WildcardPermission("domain:*:instance2");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
     }
 
     @Test
     public void testImpliesNegativeSingleInstance() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setTargets("instance1");
-        p2.setTargets("instance2");
+        WildcardPermission p1 = new WildcardPermission("domain:*:instance1");
+        WildcardPermission p2 = new WildcardPermission("domain:*:instance2");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setTargets("instance2");
-        p2.setTargets("instance1");
+        p1 = new WildcardPermission("domain:*:instance2");
+        p2 = new WildcardPermission("domain:*:instance1");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
 
     @Test
     public void testImpliesAffirmativeMultiInstances() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setTargets("instance1", "instance2");
-        p2.setTargets("instance1", "instance2");
+        WildcardPermission p1 = new WildcardPermission("domain:*:instance1,instance2");
+        WildcardPermission p2 = new WildcardPermission("domain:*:instance1,instance2");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
 
-        p1.setTargets("instance2", "instance1");
-        p2.setTargets("instance2", "instance1");
+        p1 = new WildcardPermission("domain:*:instance2,instance1");
+        p2 = new WildcardPermission("domain:*:instance2,instance1");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
 
-        p1.setTargets("instance1", "instance2");
-        p2.setTargets("instance2", "instance1");
+        p1 = new WildcardPermission("domain:*:instance1,instance2");
+        p2 = new WildcardPermission("domain:*:instance2,instance1");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
 
-        p1.setTargets("instance2", "instance1");
-        p2.setTargets("instance1", "instance2");
+        p1 = new WildcardPermission("domain:*:instance2,instance1");
+        p2 = new WildcardPermission("domain:*:instance1,instance2");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
     }
 
     @Test
     public void testImpliesNegativeMultiInstances() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setTargets("instance1", "instance2");
-        p2.setTargets("instance1", "instance3");
+        WildcardPermission p1 = new WildcardPermission("domain:*:instance1,instance2");
+        WildcardPermission p2 = new WildcardPermission("domain:*:instance1,instance3");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setTargets("instance1", "instance2");
-        p2.setTargets("instance3", "instance4");
+        p1 = new WildcardPermission("domain:*:instance1,instance2");
+        p2 = new WildcardPermission("domain:*:instance3,instance4");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setTargets("instance4", "instance1");
-        p2.setTargets("instance2", "instance3");
+        p1 = new WildcardPermission("domain:*:instance4,instance1");
+        p2 = new WildcardPermission("domain:*:instance2,instance3");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setTargets("instance3", "instance4");
-        p2.setTargets("instance1", "instance2");
+        p1 = new WildcardPermission("domain:*:instance3,instance4");
+        p2 = new WildcardPermission("domain:*:instance1,instance2");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setTargets("instance2", "instance3");
-        p2.setTargets("instance4", "instance1");
+        p1 = new WildcardPermission("domain:*:instance2,instance3");
+        p2 = new WildcardPermission("domain:*:instance4,instance1");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
 
     @Test
     public void testImpliesAffirmativeSingleAll() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("action");
-        p2.setActions("action");
-        p1.setTargets("instance");
-        p2.setTargets("instance");
-
+        WildcardPermission p1 = new WildcardPermission("domain:action:instance");
+        WildcardPermission p2 = new WildcardPermission("domain:action:instance");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
     }
 
     @Test
     public void testImpliesNegativeSingleAll() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("action2");
-        p2.setActions("action1");
-        p1.setTargets("instance1");
-        p2.setTargets("instance1");
+        WildcardPermission p1 = new WildcardPermission("domain:action2:instance1");
+        WildcardPermission p2 = new WildcardPermission("domain:action1:instance1");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("action1");
-        p2.setActions("action2");
-        p1.setTargets("instance1");
-        p2.setTargets("instance1");
+        p1 = new WildcardPermission("domain:action1:instance1");
+        p2 = new WildcardPermission("domain:action2:instance1");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("action1");
-        p2.setActions("action1");
-        p1.setTargets("instance2");
-        p2.setTargets("instance1");
+        p1 = new WildcardPermission("domain:action1:instance2");
+        p2 = new WildcardPermission("domain:action1:instance1");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("action1");
-        p2.setActions("action1");
-        p1.setTargets("instance1");
-        p2.setTargets("instance2");
+        p1 = new WildcardPermission("domain:action1:instance1");
+        p2 = new WildcardPermission("domain:action1:instance2");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
 
     @Test
     public void testImpliesAffirmativeMultiAll() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("action1", "action2");
-        p2.setActions("action1", "action2");
-        p1.setTargets("instance1", "instance2");
-        p2.setTargets("instance1", "instance2");
+        WildcardPermission p1 = new WildcardPermission("domain:action1,action2:instance1,instance2");
+        WildcardPermission p2 = new WildcardPermission("domain:action1,action2:instance1,instance2");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));
 
-        p1.setActions("action1", "action2");
-        p2.setActions("action2", "action1");
-        p1.setTargets("instance1", "instance2");
-        p2.setTargets("instance2", "instance1");
+        p1 = new WildcardPermission("domain:action1,action2:instance1,instance2");
+        p2 = new WildcardPermission("domain:action2,action1:instance2,instance1");
         assertTrue(p1.implies(p2));
         assertTrue(p2.implies(p1));;
     }
 
     @Test
     public void testImpliesNegativeMultiAll() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("action1", "action2");
-        p2.setActions("action1", "action3");
-        p1.setTargets("instance1", "instance2");
-        p2.setTargets("instance1", "instance2");
+        WildcardPermission p1 = new WildcardPermission("domain:action1,action2:instance1,instance2");
+        WildcardPermission p2 = new WildcardPermission("domain:action1,action3:instance1,instance2");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("action1", "action2");
-        p2.setActions("action1", "action2");
-        p1.setTargets("instance1", "instance2");
-        p2.setTargets("instance1", "instance3");
+        p1 = new WildcardPermission("domain:action1,action2:instance1,instance2");
+        p2 = new WildcardPermission("domain:action1,action2:instance1,instance3");
         assertFalse(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
 
     @Test
     public void testImpliesWildCardActions() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("*");
-        p2.setActions("action");
+        WildcardPermission p1 = new WildcardPermission("domain:*");
+        WildcardPermission p2 = new WildcardPermission("domain:action");
         assertTrue(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
 
     @Test
     public void testImpliesWildCardInstance() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setTargets("*");
-        p2.setTargets("instance");
+        WildcardPermission p1 = new WildcardPermission("domain:*:*");
+        WildcardPermission p2 = new WildcardPermission("domain:*:instance");
         assertTrue(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
 
     @Test
     public void testImpliesWildCardMultiActions() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setActions("*");
-        p2.setActions("action1", "action2");
+        WildcardPermission p1 = new WildcardPermission("domain:*");
+        WildcardPermission p2 = new WildcardPermission("domain:action1,action2");
         assertTrue(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setActions("*", "action3");
-        p2.setActions("action1", "action2");
+        p1 = new WildcardPermission("domain:*,action3");
+        p2 = new WildcardPermission("domain:action1,action2");
         assertTrue(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }
 
     @Test
     public void testImpliesWildCardMultiInstance() throws Exception {
-        WildcardPermission p1 = new WildcardPermission("domain");
-        WildcardPermission p2 = new WildcardPermission("domain");
-
-        p1.setTargets("*");
-        p2.setTargets("instance1", "instance2");
+        WildcardPermission p1 = new WildcardPermission("domain:*:*");
+        WildcardPermission p2 = new WildcardPermission("domain:*:instance1,instance2");
         assertTrue(p1.implies(p2));
         assertFalse(p2.implies(p1));
 
-        p1.setTargets("*", "instance3");
-        p2.setTargets("instance1", "instance2");
+        p1 = new WildcardPermission("domain:*:*,instance3");
+        p2 = new WildcardPermission("domain:*:instance1,instance2");
+        assertTrue(p1.implies(p2));
+        assertFalse(p2.implies(p1));
+    }
+
+    @Test
+    public void testImpliesUnbalanced() throws Exception {
+        WildcardPermission p1 = new WildcardPermission("domain");
+        WildcardPermission p2 = new WildcardPermission("domain:action1");
+        assertTrue(p1.implies(p2));
+        assertFalse(p2.implies(p1));
+
+        p1 = new WildcardPermission("domain");
+        p2 = new WildcardPermission("domain:action1,action2:instance1,instance2");
+        assertTrue(p1.implies(p2));
+        assertFalse(p2.implies(p1));
+
+        p1 = new WildcardPermission("domain:*:instance1,instance2");
+        p2 = new WildcardPermission("domain:action1,action2:instance1,instance2");
         assertTrue(p1.implies(p2));
         assertFalse(p2.implies(p1));
     }

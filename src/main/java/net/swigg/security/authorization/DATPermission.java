@@ -18,7 +18,6 @@
 package net.swigg.security.authorization;
 
 import com.google.common.base.Function;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -27,7 +26,6 @@ import javax.annotation.Nullable;
 import javax.persistence.*;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -37,7 +35,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Dustin Sweigart <dustin@swigg.net>
  */
 @Entity
-public class PrincipalWildcardPermission extends WildcardPermission {
+public class DATPermission extends WildcardPermission {
+    public static enum LEVEL {
+        DOMAIN, ACTION, TARGET
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
@@ -59,28 +61,32 @@ public class PrincipalWildcardPermission extends WildcardPermission {
     @CollectionTable(name = "permission_target", joinColumns = @JoinColumn(name = "permission_id"))
     private Set<String> targets;
 
-    public PrincipalWildcardPermission(String permission) {
+    public DATPermission(String permission) {
         super();
 
-        List<String> parts = Splitter.on(DIVIDER).splitToList(permission);
-        checkArgument(parts.size() > 0 && parts.size() <= 3);
+        String[] parts = permission.split(DIVIDER);
+        checkArgument(parts.length > 0 && parts.length <= 3);
 
         int x = 0;
         for (LEVEL level : LEVEL.values()) {
-            if (x < parts.size()) {
-                String part = parts.get(x);
-                List<String> subdivisions = Splitter.on(SUBDIVIDER).splitToList(part);
+            if (x < parts.length) {
+                String part = parts[x].trim();
+                if (part.isEmpty()) {
+                    throw new IllegalArgumentException("Wildcard parts can not be empty.");
+                }
 
-                switch (level) {
-                    case DOMAIN:
-                        setDomain(part);
-                        break;
-                    case ACTION:
-                        setActions(subdivisions);
-                        break;
-                    case TARGET:
-                        setTargets(subdivisions);
-                        break;
+                if (level.equals(LEVEL.DOMAIN)) {
+                    setDomain(part);
+                } else {
+                    String[] subdivisions = part.split(SUBDIVIDER);
+                    switch (level) {
+                        case ACTION:
+                            setActions(subdivisions);
+                            break;
+                        case TARGET:
+                            setTargets(subdivisions);
+                            break;
+                    }
                 }
             }
 
@@ -88,7 +94,7 @@ public class PrincipalWildcardPermission extends WildcardPermission {
         }
     }
 
-    public PrincipalWildcardPermission(String domain, Collection<String> actions, Collection<String> instances) {
+    public DATPermission(String domain, Collection<String> actions, Collection<String> instances) {
         super();
 
         this.setDomain(domain);
@@ -96,7 +102,7 @@ public class PrincipalWildcardPermission extends WildcardPermission {
         this.setTargets(instances);
     }
 
-    public PrincipalWildcardPermission(String domain, Collection<String> actions, TargetIdentity... instances) {
+    public DATPermission(String domain, Collection<String> actions, TargetIdentity... instances) {
         super();
 
         this.setDomain(domain);
@@ -104,30 +110,30 @@ public class PrincipalWildcardPermission extends WildcardPermission {
         this.setTargets(instances);
     }
 
-    public PrincipalWildcardPermission(String principalIdentity, String permission) {
+    public DATPermission(String principalIdentity, String permission) {
         this(permission);
         this.principalIdentity = checkNotNull(principalIdentity);
     }
 
-    public PrincipalWildcardPermission(PrincipalIdentity principalIdentity, String permission) {
+    public DATPermission(PrincipalIdentity principalIdentity, String permission) {
         this(principalIdentity.getPrincipalIdentity(), permission);
     }
 
-    public PrincipalWildcardPermission(String principalIdentity, String domain, Collection<String> actions, Collection<String> instances) {
+    public DATPermission(String principalIdentity, String domain, Collection<String> actions, Collection<String> instances) {
         this(domain, actions, instances);
         this.principalIdentity = checkNotNull(principalIdentity);
     }
 
-    public PrincipalWildcardPermission(String principalIdentity, String domain, Collection<String> actions, TargetIdentity... instances) {
+    public DATPermission(String principalIdentity, String domain, Collection<String> actions, TargetIdentity... instances) {
         this(domain, actions, instances);
         this.principalIdentity = checkNotNull(principalIdentity);
     }
 
-    public PrincipalWildcardPermission(PrincipalIdentity principalIdentity, String domain, Collection<String> actions, Collection<String> instances) {
+    public DATPermission(PrincipalIdentity principalIdentity, String domain, Collection<String> actions, Collection<String> instances) {
         this(principalIdentity.getPrincipalIdentity(), domain, actions, instances);
     }
 
-    public PrincipalWildcardPermission(PrincipalIdentity principalIdentity, String domain, Collection<String> actions, TargetIdentity... instances) {
+    public DATPermission(PrincipalIdentity principalIdentity, String domain, Collection<String> actions, TargetIdentity... instances) {
         this(principalIdentity.getPrincipalIdentity(), domain, actions, instances);
     }
 
@@ -151,19 +157,24 @@ public class PrincipalWildcardPermission extends WildcardPermission {
         return domain;
     }
 
-    @Override
     protected void setDomain(String domain) {
         this.domain = checkNotNull(domain);
-        super.setDomain(this.domain);
+        super.levelHash(0, this.domain);
     }
 
     public ImmutableSet<String> getActions() {
         return ImmutableSet.copyOf(this.actions);
     }
 
-    public PrincipalWildcardPermission setActions(Collection<String> actions) {
+    public DATPermission setActions(Collection<String> actions) {
         this.actions = actions != null ? Sets.newHashSet(actions) : Sets.newHashSet(WILDCARD);
-        super.setActions(this.actions.toArray(new String[this.actions.size()]));
+        super.levelHash(1, this.actions.toArray(new String[this.actions.size()]));
+        return this;
+    }
+
+    public DATPermission setActions(String... actions) {
+        this.actions = Sets.newHashSet(actions);
+        super.levelHash(1, actions);
         return this;
     }
 
@@ -171,13 +182,19 @@ public class PrincipalWildcardPermission extends WildcardPermission {
         return ImmutableSet.copyOf(targets);
     }
 
-    public PrincipalWildcardPermission setTargets(Collection<String> targets) {
+    public DATPermission setTargets(Collection<String> targets) {
         this.targets = targets != null ? Sets.newHashSet(targets) : Sets.newHashSet(WILDCARD);
-        super.setTargets(this.targets.toArray(new String[this.targets.size()]));
+        super.levelHash(2, this.targets.toArray(new String[this.targets.size()]));
         return this;
     }
 
-    public PrincipalWildcardPermission setTargets(TargetIdentity... targets) {
+    public DATPermission setTargets(String... targets) {
+        this.targets = Sets.newHashSet(targets);
+        super.levelHash(2, targets);
+        return this;
+    }
+
+    public DATPermission setTargets(TargetIdentity... targets) {
         this.setTargets(Lists.transform(Arrays.asList(targets), new Function<TargetIdentity, String>() {
             @Nullable
             @Override

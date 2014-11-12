@@ -18,7 +18,7 @@
 package net.swigg.security.example;
 
 import com.google.common.collect.Sets;
-import net.swigg.security.authorization.PrincipalWildcardPermission;
+import net.swigg.security.authorization.DATPermission;
 import net.swigg.security.authorization.TargetIdentity;
 import net.swigg.security.authorization.WildcardPermission;
 import org.apache.shiro.authz.Permission;
@@ -30,7 +30,7 @@ import java.util.Set;
  *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
-public class AccountPermission extends PrincipalWildcardPermission implements Permission {
+public class AccountPermission extends DATPermission implements Permission {
     public static final String PERMISSION_DOMAIN = "account";
 
     private Set<String> actions;

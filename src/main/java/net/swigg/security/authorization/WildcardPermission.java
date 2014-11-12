@@ -25,7 +25,8 @@ import org.apache.shiro.util.CollectionUtils;
 import java.util.*;
 
 /**
- * Permission based on the premise of {@link org.apache.shiro.authz.permission.WildcardPermission}
+ * Permission based on the premise of {@link org.apache.shiro.authz.permission.WildcardPermission}, but using precomputed
+ * value hashes when running {@link #implies(Permission)}.
  *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
@@ -34,13 +35,9 @@ public class WildcardPermission implements Permission {
     protected static final String DIVIDER = ":";
     protected static final String SUBDIVIDER = ",";
 
-    public static enum LEVEL {
-        DOMAIN, ACTION, TARGET
-    }
+    private final Map<Integer, Integer> levelHash;
 
-    private final Map<LEVEL, Integer> levelHash;
-
-    private final Map<LEVEL, Boolean> levelWildcard;
+    private final Map<Integer, Boolean> levelWildcard;
 
     /**
      * Designated constructor.
@@ -50,56 +47,28 @@ public class WildcardPermission implements Permission {
         this.levelWildcard = Maps.newHashMap();
     }
 
-    public WildcardPermission(String domain, Collection<String> actions, Collection<String> targets) {
-        this();
-
-        levelHash(LEVEL.DOMAIN, domain);
-        levelHash(LEVEL.ACTION, actions);
-        levelHash(LEVEL.TARGET, targets);
-    }
-
     public WildcardPermission(String permission) {
         this();
 
-//        List<String> parts = Splitter.on(DIVIDER).splitToList(permission);
-        List<String> parts = CollectionUtils.asList(permission.split(DIVIDER));
-//        checkArgument(parts.size() > 0 && parts.size() <= 3);
+        String[] parts = permission.split(DIVIDER);
 
         int x = 0;
-        for (LEVEL level : LEVEL.values()) {
-            if (x < parts.size()) {
-                String part = parts.get(x);
-//                List<String> subdivisions = Splitter.on(SUBDIVIDER).splitToList(part);
-                List<String> subdivisions = CollectionUtils.asList(part.split(SUBDIVIDER));
-//                if (level.equals(LEVEL.DOMAIN) && subdivisions.size() > 1) {
-//                    throw new IllegalArgumentException("Permission string can't have multiple domains");
-//                }
-                levelHash(level, subdivisions.toArray(new String[subdivisions.size()]));
-            } else {
-                levelHash(level, WILDCARD);
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                throw new IllegalArgumentException("Wildcard parts can not be empty.");
             }
-
+            List<String> subdivisions = CollectionUtils.asList(trimmed.split(SUBDIVIDER));
+            levelHash(x, subdivisions.toArray(new String[subdivisions.size()]));
             x++;
         }
     }
 
-    public Map<LEVEL, Integer> getLevelHash() {
+    public Map<Integer, Integer> getLevelHash() {
         return levelHash;
     }
 
-    protected void setDomain(String domain) {
-        levelHash(LEVEL.DOMAIN, domain);
-    }
-
-    public void setActions(String... actions) {
-        levelHash(LEVEL.ACTION, actions);
-    }
-
-    public void setTargets(String... targets) {
-        levelHash(LEVEL.TARGET, targets);
-    }
-
-    private int levelHash(LEVEL level, String... items) {
+    protected int levelHash(Integer level, String... items) {
         if (items == null || items.length == 0) {
             items = new String[]{WILDCARD};
         }
@@ -117,7 +86,7 @@ public class WildcardPermission implements Permission {
         return levelValue;
     }
 
-    private int levelHash(LEVEL level, Collection<String> items) {
+    protected int levelHash(Integer level, Collection<String> items) {
         items = items != null ? items : Collections.<String>emptyList();
         return levelHash(level, items.toArray(new String[items.size()]));
     }
@@ -129,9 +98,13 @@ public class WildcardPermission implements Permission {
         }
 
         WildcardPermission that = WildcardPermission.class.cast(p);
-        for (LEVEL level : LEVEL.values()) {
-            if (!this.levelWildcard.get(level)) {
-                if (!this.levelHash.get(level).equals(that.levelHash.get(level))) {
+        for (Integer x : this.levelHash.keySet()) {
+            if (!this.levelWildcard.get(x)) {
+                if (that.levelHash.size() < x) {
+                    return false;
+                }
+
+                if (!this.levelHash.get(x).equals(that.levelHash.get((x)))) {
                     return false;
                 }
             }
@@ -143,9 +116,7 @@ public class WildcardPermission implements Permission {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("domain", this.levelHash.get(LEVEL.DOMAIN))
-                .add("actions", this.levelHash.get(LEVEL.ACTION))
-                .add("targets", this.levelHash.get(LEVEL.TARGET))
+                .add("levelHash", this.levelHash.values().toArray(new Integer[this.levelHash.size()]))
                 .toString();
     }
 }

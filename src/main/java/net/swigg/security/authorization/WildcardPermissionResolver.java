@@ -17,20 +17,15 @@
 
 package net.swigg.security.authorization;
 
-import org.springframework.boot.orm.jpa.EntityScan;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import javax.persistence.EntityManager;
+import org.apache.shiro.authz.Permission;
+import org.apache.shiro.authz.permission.PermissionResolver;
 
 /**
  * @author Dustin Sweigart <dustin@swigg.net>
  */
-@Configuration
-@EntityScan({"net.swigg.security.authorization"})
-public class AuthorizationConfig {
-    @Bean
-    public PermissionFetcher permissionFetcher(final EntityManager entityManager) {
-        return new DATPermissionFetcher(entityManager);
+public class WildcardPermissionResolver implements PermissionResolver {
+    @Override
+    public Permission resolvePermission(String permissionString) {
+        return new WildcardPermission(permissionString);
     }
 }

@@ -28,40 +28,15 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * Class Description
- *
  * @author Dustin Sweigart <dustin@swigg.net>
  */
 public class PermissionSpeedTest {
     static private final Logger LOGGER = LoggerFactory.getLogger(PermissionSpeedTest.class);
 
     @Test
-    public void testSwiggWildcardPermission() throws Exception {
-        DateTime startDate = DateTime.now();
-        for (int x = 0; x < 10000; x++) {
-            Permission p1 = new WildcardPermission("*:*:*");
-            Permission p2 = new WildcardPermission("domain:*:*");
-            Permission p3 = new WildcardPermission("domain:action1:*");
-            Permission p4 = new WildcardPermission("domain:action1:instance1");
-            Permission p5 = new WildcardPermission("domain:action1,action2:*");
-            Permission p6 = new WildcardPermission("domain:action1:instance1,instance2");
-
-            List<Permission> permissions = Lists.newArrayList(p1, p2, p3, p4, p5, p6);
-            for (Permission perm1 : permissions) {
-                for (Permission perm2 : permissions) {
-                    perm1.implies(perm2);
-                    perm2.implies(perm1);
-                }
-            }
-        }
-        DateTime endDate = DateTime.now();
-        System.out.println(String.format("SwiggWildcardPermission took %s", new Interval(startDate, endDate).toPeriod()));
-    }
-
-    @Test
     public void testShiroWildcardPermission() throws Exception {
         DateTime startDate = DateTime.now();
-        for (int x = 0; x < 10000; x++) {
+        for (int x = 0; x < 100000; x++) {
             Permission p1 = new org.apache.shiro.authz.permission.WildcardPermission("*:*:*");
             Permission p2 = new org.apache.shiro.authz.permission.WildcardPermission("domain:*:*");
             Permission p3 = new org.apache.shiro.authz.permission.WildcardPermission("domain:action1:*");
@@ -79,5 +54,28 @@ public class PermissionSpeedTest {
         }
         DateTime endDate = DateTime.now();
         System.out.println(String.format("ShiroWildcardPermission took %s", new Interval(startDate, endDate).toPeriod()));
+    }
+
+    @Test
+    public void testSwiggWildcardPermission() throws Exception {
+        DateTime startDate = DateTime.now();
+        for (int x = 0; x < 100000; x++) {
+            Permission p1 = new WildcardPermission("*:*:*");
+            Permission p2 = new WildcardPermission("domain:*:*");
+            Permission p3 = new WildcardPermission("domain:action1:*");
+            Permission p4 = new WildcardPermission("domain:action1:instance1");
+            Permission p5 = new WildcardPermission("domain:action1,action2:*");
+            Permission p6 = new WildcardPermission("domain:action1:instance1,instance2");
+
+            List<Permission> permissions = Lists.newArrayList(p1, p2, p3, p4, p5, p6);
+            for (Permission perm1 : permissions) {
+                for (Permission perm2 : permissions) {
+                    perm1.implies(perm2);
+                    perm2.implies(perm1);
+                }
+            }
+        }
+        DateTime endDate = DateTime.now();
+        System.out.println(String.format("SwiggWildcardPermission took %s", new Interval(startDate, endDate).toPeriod()));
     }
 }

@@ -216,6 +216,10 @@ public abstract class AuthorizingRealm extends AuthenticatingRealm implements Au
     }
 
     PermissionResolver permissionResolver() {
+        if (this.permissionResolver == null) {
+            this.permissionResolver = new WildcardPermissionResolver();
+        }
+
         return permissionResolver;
     }
 
